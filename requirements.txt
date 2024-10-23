@@ -1,0 +1,79 @@
+# Install required packages
+# Uncomment these lines to run them in a Jupyter notebook or terminal
+# !pip install PyPDF2
+# !pip install spacy
+# !python -m spacy download en_core_web_sm
+
+import streamlit as st
+import os
+from PyPDF2 import PdfReader
+import spacy
+from random import sample
+
+# Load spaCy model for text processing
+nlp = spacy.load('en_core_web_sm')
+
+# Streamlit application
+st.title("PDF Analyzer (Without API Key)")
+st.markdown("Upload your PDF file to analyze and generate questions from its content.")
+
+# File uploader for PDF
+pdf_file = st.file_uploader("Upload a PDF file", type='pdf')
+
+if pdf_file is not None:
+    # Read the PDF file
+    pdf_reader = PdfReader(pdf_file)
+    
+    # Extract text from PDF
+    raw_text = ''
+    for page in pdf_reader.pages:
+        content = page.extract_text()
+        if content:
+            raw_text += content
+
+    st.subheader("Extracted Text:")
+    st.write(raw_text[:1000])  # Display first 1000 characters of extracted text for preview
+
+    # Process the extracted text with spaCy
+    doc = nlp(raw_text)
+
+    # Extract sentences for possible questions
+    sentences = [sent.text for sent in doc.sents if len(sent.text) > 50]  # Filter for longer sentences
+    st.subheader("Sample Sentences:")
+    st.write(sentences[:5])  # Display a few sentences as a preview
+
+    # Generate 20 Questions
+    def generate_questions(sentences):
+        questions = []
+        for sentence in sentences:
+            # Basic transformation to question (for now, a placeholder logic)
+            if "is" in sentence:
+                question = sentence.replace("is", "What is")
+            elif "are" in sentence:
+                question = sentence.replace("are", "What are")
+            else:
+                question = "What is the main idea of this sentence: " + sentence
+            questions.append(question)
+        return questions
+
+    # Randomly sample 20 questions from the sentences
+    if len(sentences) > 20:
+        sampled_sentences = sample(sentences, 20)
+    else:
+        sampled_sentences = sentences  # If fewer than 20, use all
+
+    generated_questions = generate_questions(sampled_sentences)
+
+    st.subheader("Generated Questions:")
+    for i, question in enumerate(generated_questions, 1):
+        st.write(f"{i}. {question}")
+
+    # Generate corresponding answers from sentences
+    st.subheader("Corresponding Answers (extracted from the text):")
+    for i, sentence in enumerate(sampled_sentences, 1):
+        st.write(f"{i}. {sentence}")  # Display the sentence as an answer
+
+
+
+if __name__ == '__main__':
+    main()
