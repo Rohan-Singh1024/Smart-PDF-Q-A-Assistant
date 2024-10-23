@@ -3,15 +3,20 @@ import os
 from PyPDF2 import PdfReader
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import subprocess
 import spacy
 
-# Load spaCy model for text processing
-nlp = spacy.load('en_core_web_sm')
+# Ensure spaCy model is downloaded
+try:
+    nlp = spacy.load('en_core_web_sm')
+except OSError:
+    # Download the model if it's not installed
+    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+    nlp = spacy.load('en_core_web_sm')
 
 # Streamlit application
 st.title("Smart PDF Q&A Assistant 🤖")
 st.markdown("**Upload multiple PDF files and let the Smart PDF Assistant analyze their content to answer all your questions intelligently and efficiently!**")
-
 
 # File uploader for multiple PDFs
 pdf_files = st.file_uploader("Upload PDF files", type='pdf', accept_multiple_files=True)
@@ -34,8 +39,6 @@ if pdf_files:
     # Split the extracted text into sentences
     doc = nlp(raw_text)
     sentences = [sent.text.strip() for sent in doc.sents if len(sent.text.strip()) > 50]  # Filter out short sentences
-
-
 
     # TF-IDF Vectorizer
     vectorizer = TfidfVectorizer()
